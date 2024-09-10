@@ -3,18 +3,30 @@ import { expect, test } from "vitest";
 import { RowMarkerManager } from "@src/features/row_marker_manager";
 
 export function activate() {
-    vscode.window.showInformationMessage("Hello");
-
     const rowMarkerManager = new RowMarkerManager();
 
-    vscode.commands.registerTextEditorCommand("auto-unstage.markSelectedRows", (textEditor) => {
-        rowMarkerManager.markSelectedRows({
-            fsPath: textEditor.document.uri.fsPath,
-            start: textEditor.selection.start.line,
-            end: textEditor.selection.end.line,
-        });
-        console.log(rowMarkerManager.rowMarkers.get(textEditor.document.uri.fsPath));
+    vscode.commands.registerTextEditorCommand("auto-unstage.addSelectedRows", (textEditor) => {
+        rowMarkerManager.addRows(textEditor.document.uri.fsPath, textEditor.selection);
     });
+
+    vscode.workspace.onDidChangeTextDocument((event) => {
+        const fsPath = event.document.uri.fsPath;
+        event.contentChanges.forEach((change) => {
+
+            if(change.text.includes('\n')) {
+                console.log(`change=${change.range.start.line + 1}, ${change.range.end.line + 1},  text=${JSON.stringify(change.text)}, offset=${change.rangeOffset},   line=${JSON.stringify(event.document.lineAt(change.range.start.line).text)}`);
+            }
+
+            
+
+            rowMarkerManager.updateRowsOnTextChange(fsPath, change);
+        });
+        console.log("-----------------");
+    });
+
+    
+    
+    vscode.window.showInformationMessage("插件启动成功");
 }
 
 export function deactivate() {}

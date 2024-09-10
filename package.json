@@ -13,7 +13,7 @@
   "contributes": {
     "commands":[
       {
-        "command": "auto-unstage.markSelectedRows",
+        "command": "auto-unstage.addSelectedRows",
         "title": "Mark selected rows which will auto unstaged"
       }
     ]
