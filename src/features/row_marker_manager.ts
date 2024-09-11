@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 
+const WHITESPACE_REGEX = new RegExp(/^\s*$/g);
+
 export class RowMarkerManager {
     _map: Map<string, Set<number>> = new Map();
 
@@ -20,7 +22,7 @@ export class RowMarkerManager {
         this._updateIcon();
     }
 
-    public updateRowsOnTextChange(fsPath: string, change: vscode.TextDocumentContentChangeEvent) {
+    public updateRowsOnTextChange(fsPath: string, document: vscode.TextDocument, change: vscode.TextDocumentContentChangeEvent) {
         const rows = this._map.get(fsPath);
         if (!rows) {
             return;
@@ -40,16 +42,25 @@ export class RowMarkerManager {
 
         const newRows = new Set<number>();
         for (const curRow of rows) {
-            if (curRow <= change.range.end.line) {
-                newRows.add(curRow);
+            if (curRow >= change.range.end.line) {
+                const curRowText = document.lineAt(curRow).text;
+
+                // 修改后原来那一行变成空白字符，说明是在代码前面插入了换行
+                if (WHITESPACE_REGEX.test(curRowText)) {
+                    newRows.add(curRow + changeLines);
+                }
+                // 修改后原来那一行不是空白字符，说明是在代码后面插入了换行
+                else {
+                    newRows.add(curRow);
+                }
             }
             else {
-                newRows.add(curRow + changeLines);
-                console.log(`原${curRow + 1}变成了${curRow + changeLines + 1}`);
+                newRows.add(curRow);
             }
         }
 
         this._map.set(fsPath, newRows);
+        this._updateIcon();
     }
 
     private _updateIcon() {
@@ -63,17 +74,4 @@ export class RowMarkerManager {
         }
         textEditor.setDecorations(this.icon, [...rows].map(row => new vscode.Range(row, 0, row, 0)));
     }
-}
-
-const whitespaceRegex = new RegExp(/\s/g);
-function isStartWithNewline(str: string) {
-    for (const c of str) {
-        if (c === "\n") {
-            return true;
-        }
-        if (!whitespaceRegex.test(c)) {
-            return false;
-        }
-    }
-    return false;
 }

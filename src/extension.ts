@@ -11,21 +11,21 @@ export function activate() {
 
     vscode.workspace.onDidChangeTextDocument((event) => {
         const fsPath = event.document.uri.fsPath;
-        event.contentChanges.forEach((change) => {
+        event.contentChanges.forEach((change, index) => {
+            console.log({
+                index,
+                start: change.range.start.line + 1,
+                end: change.range.end.line + 1,
+                changeText: JSON.stringify(change.text),
+                lineAtStart: JSON.stringify(event.document.lineAt(change.range.start.line).text),
+                lineAtEnd: JSON.stringify(event.document.lineAt(change.range.end.line).text),
+            });
 
-            if(change.text.includes('\n')) {
-                console.log(`change=${change.range.start.line + 1}, ${change.range.end.line + 1},  text=${JSON.stringify(change.text)}, offset=${change.rangeOffset},   line=${JSON.stringify(event.document.lineAt(change.range.start.line).text)}`);
-            }
-
-            
-
-            rowMarkerManager.updateRowsOnTextChange(fsPath, change);
+            rowMarkerManager.updateRowsOnTextChange(fsPath, event.document, change);
         });
         console.log("-----------------");
     });
 
-    
-    
     vscode.window.showInformationMessage("插件启动成功");
 }
 
