@@ -1,38 +1,44 @@
 import * as vscode from "vscode";
 import { expect, test } from "vitest";
-import { RowMarkerManager } from "@src/features/row_marker_manager";
+import { RowMarkerManager } from "@src/row_marker_manager";
+import { GitExtension } from "@src/repository_watcher/git";
+import { RepositoryWatcher } from "@src/repository_watcher";
 
-export function activate() {
-    const rowMarkerManager = new RowMarkerManager();
+export function activate(ctx: vscode.ExtensionContext) {
+    const rowMarkerManager = new RowMarkerManager(ctx);
 
-    vscode.commands.registerTextEditorCommand("auto-unstage.addSelectedRows", (textEditor) => {
-        rowMarkerManager.addRows(textEditor.document.uri.fsPath, textEditor.selection);
+    const gitExtensionApi = vscode.extensions.getExtension<GitExtension>("vscode.git")?.exports?.getAPI(1);
+    if (gitExtensionApi == undefined) {
+        console.warn("Extension vscode.auto-unstage failed to activate, can not found dependency vscode.git.");
+        return false;
+    }
+
+    const watcherMap = new Map<string, RepositoryWatcher>();
+    
+    const watchRepositoryOpen = gitExtensionApi.onDidOpenRepository(
+        (repository) => {
+            const repositoryWatcher = new RepositoryWatcher(
+                repository,
+                fsPath => rowMarkerManager.getUnstageRows(fsPath),
+            );
+            ctx.subscriptions.push(repositoryWatcher);
+            watcherMap.set(repository.rootUri.toString(), repositoryWatcher);
+        },
+    );
+    ctx.subscriptions.push(watchRepositoryOpen);
+
+    const watchRepositoryClose = gitExtensionApi.onDidCloseRepository((repository) => {
+        watcherMap.get(repository.rootUri.toString())?.dispose();
     });
+    ctx.subscriptions.push(watchRepositoryClose);
 
-    vscode.workspace.onDidChangeTextDocument((event) => {
-        const fsPath = event.document.uri.fsPath;
-        event.contentChanges.forEach((change, index) => {
-            console.log({
-                index,
-                start: change.range.start.line + 1,
-                end: change.range.end.line + 1,
-                changeText: JSON.stringify(change.text),
-                lineAtStart: JSON.stringify(event.document.lineAt(change.range.start.line).text),
-                lineAtEnd: JSON.stringify(event.document.lineAt(change.range.end.line).text),
-            });
-
-            rowMarkerManager.updateRowsOnTextChange(fsPath, event.document, change);
-        });
-        console.log("-----------------");
-    });
-
-    vscode.window.showInformationMessage("插件启动成功");
+    vscode.window.showInformationMessage("Extension vscode.auto-unstage activate successfully !!!");
 }
 
 export function deactivate() {}
 
 if (import.meta.vitest) {
     test("vitest example", () => {
-        expect("1").toBe("1");
+        expect(1).toBe(1);
     });
 }

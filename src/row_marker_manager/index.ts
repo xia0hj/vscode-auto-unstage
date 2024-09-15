@@ -6,9 +6,32 @@ export class RowMarkerManager {
     _map: Map<string, Set<number>> = new Map();
 
     icon = vscode.window.createTextEditorDecorationType({
-        gutterIconPath: "C:\\my_workspace\\my_project\\vscode-auto-unstage\\src\\features\\icon.svg",
-        gutterIconSize: "contain",
+        light: {
+            gutterIconPath: "C:\\my_workspace\\my_project\\vscode-auto-unstage\\src\\row_marker_manager\\icon\\light.svg",
+            gutterIconSize: "auto",
+            opacity: '0.3',
+        },
+        dark: {
+            gutterIconPath: "C:\\my_workspace\\my_project\\vscode-auto-unstage\\src\\row_marker_manager\\icon\\dark.svg",
+            gutterIconSize: "auto",
+            opacity: '0.3',
+        },
     });
+
+    constructor(ctx: vscode.ExtensionContext) {
+        const d0 = vscode.commands.registerTextEditorCommand("auto-unstage.addSelectedRows", (textEditor) => {
+            this.addRows(textEditor.document.uri.fsPath, textEditor.selection);
+        });
+
+        const d1 = vscode.workspace.onDidChangeTextDocument((event) => {
+            const fsPath = event.document.uri.fsPath;
+            event.contentChanges.forEach((change) => {
+                this.updateRowsOnTextChange(fsPath, event.document, change);
+            });
+        });
+
+        ctx.subscriptions.push(d0, d1);
+    }
 
     public addRows(fsPath: string, selection: vscode.Selection) {
         let rows = this._map.get(fsPath);
@@ -63,6 +86,10 @@ export class RowMarkerManager {
         this._updateIcon();
     }
 
+    public getUnstageRows(fsPath: string) {
+        return new Set(this._map.get(fsPath));
+    }
+
     private _updateIcon() {
         const textEditor = vscode.window.activeTextEditor;
         if (!textEditor) {
@@ -72,6 +99,6 @@ export class RowMarkerManager {
         if (!rows) {
             return;
         }
-        textEditor.setDecorations(this.icon, [...rows].map(row => new vscode.Range(row, 0, row, 0)));
+        textEditor.setDecorations(this.icon, [...rows].map(row => textEditor.document.lineAt(row).range));
     }
 }
