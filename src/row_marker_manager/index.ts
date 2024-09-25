@@ -1,48 +1,58 @@
 import * as vscode from "vscode";
+import path from "node:path";
 
 const WHITESPACE_REGEX = new RegExp(/^\s*$/g);
 
-export class RowMarkerManager {
-    _map: Map<string, Set<number>> = new Map();
+class RowMarkerTreeItem extends vscode.TreeItem {
+    fsPath: string;
+    constructor(fsPath: string, collapsibleState?: vscode.TreeItemCollapsibleState) {
+        super(path.basename(fsPath), collapsibleState);
+        this.fsPath = fsPath;
+    }
+}
 
-    icon = vscode.window.createTextEditorDecorationType({
-        light: {
-            gutterIconPath: "C:\\my_workspace\\my_project\\vscode-auto-unstage\\src\\row_marker_manager\\icon\\light.svg",
-            gutterIconSize: "auto",
-            opacity: '0.3',
-        },
-        dark: {
-            gutterIconPath: "C:\\my_workspace\\my_project\\vscode-auto-unstage\\src\\row_marker_manager\\icon\\dark.svg",
-            gutterIconSize: "auto",
-            opacity: '0.3',
-        },
-    });
+export class RowMarkerManager implements vscode.TreeDataProvider<RowMarkerTreeItem> {
+    private _map: Map<string, Set<number>> = new Map();
+    private icon: vscode.TextEditorDecorationType;
 
-    constructor(ctx: vscode.ExtensionContext) {
-        const d0 = vscode.commands.registerTextEditorCommand("auto-unstage.addSelectedRows", (textEditor) => {
-            this.addRows(textEditor.document.uri.fsPath, textEditor.selection);
+    constructor(extensionUri: vscode.Uri) {
+        this.icon = vscode.window.createTextEditorDecorationType({
+            light: {
+                gutterIconPath: vscode.Uri.joinPath(extensionUri, "assets", "light.svg"),
+                gutterIconSize: "auto",
+                opacity: "0.3",
+            },
+            dark: {
+                gutterIconPath: vscode.Uri.joinPath(extensionUri, "assets", "dark.svg"),
+                gutterIconSize: "auto",
+                opacity: "0.3",
+            },
         });
-
-        const d1 = vscode.workspace.onDidChangeTextDocument((event) => {
-            const fsPath = event.document.uri.fsPath;
-            event.contentChanges.forEach((change) => {
-                this.updateRowsOnTextChange(fsPath, event.document, change);
-            });
-        });
-
-        ctx.subscriptions.push(d0, d1);
     }
 
-    public addRows(fsPath: string, selection: vscode.Selection) {
+    // #region handle rows
+    public addRows(fsPath: string, start: number, end: number) {
         let rows = this._map.get(fsPath);
         if (!rows) {
             rows = new Set<number>();
             this._map.set(fsPath, rows);
         }
-        for (let i = selection.start.line; i <= selection.end.line; i++) {
+        for (let i = start; i <= end; i++) {
             rows.add(i);
         }
-        this._updateIcon();
+        this.refresh();
+    }
+
+    public removeRows(fsPath: string, start: number, end: number) {
+        let rows = this._map.get(fsPath);
+        if (!rows) {
+            rows = new Set<number>();
+            this._map.set(fsPath, rows);
+        }
+        for (let i = start; i <= end; i++) {
+            rows.delete(i);
+        }
+        this.refresh();
     }
 
     public updateRowsOnTextChange(fsPath: string, document: vscode.TextDocument, change: vscode.TextDocumentContentChangeEvent) {
@@ -66,31 +76,69 @@ export class RowMarkerManager {
         const newRows = new Set<number>();
         for (const curRow of rows) {
             if (curRow >= change.range.end.line) {
-                const curRowText = document.lineAt(curRow).text;
-
-                // 修改后原来那一行变成空白字符，说明是在代码前面插入了换行
-                if (WHITESPACE_REGEX.test(curRowText)) {
-                    newRows.add(curRow + changeLines);
-                }
-                // 修改后原来那一行不是空白字符，说明是在代码后面插入了换行
-                else {
-                    newRows.add(curRow);
-                }
-            }
-            else {
+                newRows.add(curRow + changeLines);
+            } else {
                 newRows.add(curRow);
             }
         }
 
         this._map.set(fsPath, newRows);
-        this._updateIcon();
+        this.refresh();
+
+        const d = [...newRows].sort((a, b) => a - b);
+        console.log({
+            fsPath,
+            start: d[0],
+            end: d[-1],
+        });
     }
 
     public getUnstageRows(fsPath: string) {
         return new Set(this._map.get(fsPath));
     }
+    // #endregion
 
-    private _updateIcon() {
+    // #region tree view
+    private _onDidChangeTreeData = new vscode.EventEmitter<RowMarkerTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+    getTreeItem(element: RowMarkerTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+        return element;
+    }
+
+    getChildren(element?: RowMarkerTreeItem | undefined): vscode.ProviderResult<RowMarkerTreeItem[]> {
+        // return row node
+        if (element) {
+            const rows = [...this._map.get(element.fsPath) ?? []].sort((a, b) => a - b);
+            const mergedRanges: Array<{ start: number, end: number }> = [];
+            for (const row of rows) {
+                const lastRange = mergedRanges.at(-1);
+                if (lastRange && row === lastRange.end + 1) {
+                    lastRange.end = row;
+                }
+                else {
+                    mergedRanges.push({ start: row, end: row });
+                }
+            }
+            const rowNodes = mergedRanges.map(({ start, end }) => {
+                const rangeLabel = start === end
+                    ? `${start + 1}`
+                    : `${start + 1} ~ ${end + 1}`;
+                return new RowMarkerTreeItem(rangeLabel, vscode.TreeItemCollapsibleState.None);
+            });
+            return Promise.resolve(rowNodes);
+        }
+        // return file node
+        else {
+            const fileNodes = [...this._map.keys()].map(
+                fsPath => new RowMarkerTreeItem(fsPath, vscode.TreeItemCollapsibleState.Collapsed),
+            );
+            return Promise.resolve(fileNodes);
+        }
+    }
+    // #endregion
+
+    public refresh() {
         const textEditor = vscode.window.activeTextEditor;
         if (!textEditor) {
             return;
@@ -100,5 +148,7 @@ export class RowMarkerManager {
             return;
         }
         textEditor.setDecorations(this.icon, [...rows].map(row => textEditor.document.lineAt(row).range));
+
+        this._onDidChangeTreeData.fire();
     }
 }

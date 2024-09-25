@@ -15,12 +15,27 @@
       {
         "command": "auto-unstage.addSelectedRows",
         "title": "Mark selected rows which will auto unstaged"
+      },
+      {
+        "command": "auto-unstage.removeSelectedRows",
+        "title": "Remove selected rows which will auto unstaged"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "auto-unstage.explorer",
+          "name": "Auto Unstage: Explorer"
+        }
+      ]
+    }
   },
+  "extensionDependencies": [
+    "vscode.git"
+  ],
 
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.93.0"
   },
   "publisher": "me",
   "name": "my-vscode-extension-template",

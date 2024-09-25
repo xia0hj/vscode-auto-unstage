@@ -7,7 +7,7 @@ import * as esbuild from "esbuild";
 const buildOption = {
     entryPoints: ["src/extension.ts"],
     bundle: true,
-    // minify: true,
+    minify: true,
     sourcemap: true,
     treeShaking: true,
     define: {
