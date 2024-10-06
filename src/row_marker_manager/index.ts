@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import path from "node:path";
 
-const WHITESPACE_REGEX = new RegExp(/^\s*$/g);
-
 class RowMarkerTreeItem extends vscode.TreeItem {
     fsPath: string;
     constructor(fsPath: string, collapsibleState?: vscode.TreeItemCollapsibleState) {
@@ -11,53 +9,68 @@ class RowMarkerTreeItem extends vscode.TreeItem {
     }
 }
 
-export class RowMarkerManager implements vscode.TreeDataProvider<RowMarkerTreeItem> {
-    private _map: Map<string, Set<number>> = new Map();
-    private icon: vscode.TextEditorDecorationType;
+interface RowMemento extends vscode.Memento {
+    get(fsPath: string): number[] | undefined
+    update(key: string, value: number[]): Thenable<void>
+}
 
-    constructor(extensionUri: vscode.Uri) {
+export class RowMarkerManager implements vscode.TreeDataProvider<RowMarkerTreeItem> {
+    private icon: vscode.TextEditorDecorationType;
+    private state: RowMemento;
+
+    constructor(ctx: vscode.ExtensionContext) {
         this.icon = vscode.window.createTextEditorDecorationType({
             light: {
-                gutterIconPath: vscode.Uri.joinPath(extensionUri, "assets", "light.svg"),
+                gutterIconPath: vscode.Uri.joinPath(ctx.extensionUri, "assets", "light.svg"),
                 gutterIconSize: "auto",
                 opacity: "0.3",
             },
             dark: {
-                gutterIconPath: vscode.Uri.joinPath(extensionUri, "assets", "dark.svg"),
+                gutterIconPath: vscode.Uri.joinPath(ctx.extensionUri, "assets", "dark.svg"),
                 gutterIconSize: "auto",
                 opacity: "0.3",
             },
         });
+        this.state = ctx.workspaceState;
+        this.checkWorkspaceState();
+    }
+
+    private checkWorkspaceState() {
+        let invalid = false;
+        for (const fsPath of this.state.keys()) {
+            const rows = this.state.get(fsPath);
+            if (rows != undefined && !Array.isArray(rows)) {
+                invalid = true;
+                this.state.update(fsPath, []);
+            }
+        }
+        if (invalid) {
+            vscode.window.showWarningMessage("auto-unstage reset invalid workspace state");
+        }
     }
 
     // #region handle rows
     public addRows(fsPath: string, start: number, end: number) {
-        let rows = this._map.get(fsPath);
-        if (!rows) {
-            rows = new Set<number>();
-            this._map.set(fsPath, rows);
-        }
+        const set = new Set(this.getUnstageRows(fsPath));
         for (let i = start; i <= end; i++) {
-            rows.add(i);
+            set.add(i);
         }
+        this.state.update(fsPath, [...set]);
         this.refresh();
     }
 
     public removeRows(fsPath: string, start: number, end: number) {
-        let rows = this._map.get(fsPath);
-        if (!rows) {
-            rows = new Set<number>();
-            this._map.set(fsPath, rows);
-        }
+        const set = new Set(this.state.get(fsPath));
         for (let i = start; i <= end; i++) {
-            rows.delete(i);
+            set.delete(i);
         }
+        this.state.update(fsPath, [...set]);
         this.refresh();
     }
 
-    public updateRowsOnTextChange(fsPath: string, document: vscode.TextDocument, change: vscode.TextDocumentContentChangeEvent) {
-        const rows = this._map.get(fsPath);
-        if (!rows) {
+    public updateRowsOnTextChange(fsPath: string, change: vscode.TextDocumentContentChangeEvent) {
+        const rows = this.getUnstageRows(fsPath);
+        if (rows.length === 0) {
             return;
         }
 
@@ -77,24 +90,18 @@ export class RowMarkerManager implements vscode.TreeDataProvider<RowMarkerTreeIt
         for (const curRow of rows) {
             if (curRow >= change.range.end.line) {
                 newRows.add(curRow + changeLines);
-            } else {
+            }
+            else {
                 newRows.add(curRow);
             }
         }
 
-        this._map.set(fsPath, newRows);
+        this.state.update(fsPath, [...newRows]);
         this.refresh();
-
-        const d = [...newRows].sort((a, b) => a - b);
-        console.log({
-            fsPath,
-            start: d[0],
-            end: d[-1],
-        });
     }
 
     public getUnstageRows(fsPath: string) {
-        return new Set(this._map.get(fsPath));
+        return this.state.get(fsPath) ?? [];
     }
     // #endregion
 
@@ -109,7 +116,7 @@ export class RowMarkerManager implements vscode.TreeDataProvider<RowMarkerTreeIt
     getChildren(element?: RowMarkerTreeItem | undefined): vscode.ProviderResult<RowMarkerTreeItem[]> {
         // return row node
         if (element) {
-            const rows = [...this._map.get(element.fsPath) ?? []].sort((a, b) => a - b);
+            const rows = this.getUnstageRows(element.fsPath).sort((a, b) => a - b);
             const mergedRanges: Array<{ start: number, end: number }> = [];
             for (const row of rows) {
                 const lastRange = mergedRanges.at(-1);
@@ -130,7 +137,7 @@ export class RowMarkerManager implements vscode.TreeDataProvider<RowMarkerTreeIt
         }
         // return file node
         else {
-            const fileNodes = [...this._map.keys()].map(
+            const fileNodes = [...this.state.keys()].map(
                 fsPath => new RowMarkerTreeItem(fsPath, vscode.TreeItemCollapsibleState.Collapsed),
             );
             return Promise.resolve(fileNodes);
@@ -143,8 +150,8 @@ export class RowMarkerManager implements vscode.TreeDataProvider<RowMarkerTreeIt
         if (!textEditor) {
             return;
         }
-        const rows = this._map.get(textEditor.document.uri.fsPath);
-        if (!rows) {
+        const rows = this.getUnstageRows(textEditor.document.uri.fsPath);
+        if (rows.length === 0) {
             return;
         }
         textEditor.setDecorations(this.icon, [...rows].map(row => textEditor.document.lineAt(row).range));

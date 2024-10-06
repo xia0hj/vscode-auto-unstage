@@ -12,11 +12,11 @@ interface RepositoryInternalApi extends Repository {
 
 export class RepositoryWatcher implements vscode.Disposable {
     repository: RepositoryInternalApi;
-    getUnstageRows: (fsPath: string) => Set<number>;
+    getUnstageRows: (fsPath: string) => number[];
 
     disposable?: vscode.Disposable;
 
-    constructor(repository: Repository, getUnstageRows: (fsPath: string) => Set<number>) {
+    constructor(repository: Repository, getUnstageRows: (fsPath: string) => number[]) {
         this.repository = repository as RepositoryInternalApi;
         this.getUnstageRows = getUnstageRows;
 
@@ -40,7 +40,7 @@ export class RepositoryWatcher implements vscode.Disposable {
             }
 
             for (const { uri } of this.repository.state.indexChanges) {
-                const unstageRows = this.getUnstageRows(uri.fsPath);
+                const unstageRows = new Set(this.getUnstageRows(uri.fsPath));
                 const textDocument = await vscode.workspace.openTextDocument(uri);
                 const rowText: string[] = [];
                 for (let row = 0; row < textDocument.lineCount; row++) {

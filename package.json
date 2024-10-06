@@ -11,10 +11,10 @@
     "onStartupFinished"
   ],
   "contributes": {
-    "commands":[
+    "commands": [
       {
         "command": "auto-unstage.addSelectedRows",
-        "title": "Mark selected rows which will auto unstaged"
+        "title": "Add selected rows which will auto unstaged"
       },
       {
         "command": "auto-unstage.removeSelectedRows",
@@ -28,17 +28,29 @@
           "name": "Auto Unstage: Explorer"
         }
       ]
+    },
+    "configuration": {
+      "title": "Auto Unstage",
+      "properties": {
+        "auto-unstage.enable": {
+          "type": "boolean",
+          "default": true
+        },
+        "auto-unstage.saveToWorkspace": {
+          "type": "boolean",
+          "default": false
+        }
+      }
     }
   },
   "extensionDependencies": [
     "vscode.git"
   ],
-
   "engines": {
     "vscode": "^1.93.0"
   },
-  "publisher": "me",
-  "name": "my-vscode-extension-template",
+  "publisher": "xia0hj",
+  "name": "auto-unstage",
   "displayName": "My extension",
   "version": "0.0.0",
   "devDependencies": {

@@ -12,7 +12,7 @@ export function activate(ctx: vscode.ExtensionContext) {
     }
 
     // #region init RowMarkerManager
-    const rowMarkerManager = new RowMarkerManager(ctx.extensionUri);
+    const rowMarkerManager = new RowMarkerManager(ctx);
     vscode.window.registerTreeDataProvider("auto-unstage.explorer", rowMarkerManager);
     ctx.subscriptions.push(
         vscode.commands.registerTextEditorCommand("auto-unstage.addSelectedRows", (textEditor) => {
@@ -33,7 +33,7 @@ export function activate(ctx: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeTextDocument((event) => {
             const fsPath = event.document.uri.fsPath;
             event.contentChanges.forEach((change) => {
-                rowMarkerManager.updateRowsOnTextChange(fsPath, event.document, change);
+                rowMarkerManager.updateRowsOnTextChange(fsPath, change);
             });
         }),
     );
