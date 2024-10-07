@@ -2,8 +2,6 @@
 
 ## Motivation
 
-https://marketplace.visualstudio.com/items?itemName=xia0hj.auto-unstage
-  
 There are some debug codes I don't want to commit.  
 So I develop a simple vscode extension to automatically remove them from git staging area.
 
