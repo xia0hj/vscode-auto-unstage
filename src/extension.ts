@@ -128,8 +128,6 @@ export function activate(ctx: vscode.ExtensionContext) {
         }),
     );
     // #endregion
-
-    vscode.window.showInformationMessage("[Auto Unstage] activate successfully !!!");
 }
 
 export function deactivate() {}
