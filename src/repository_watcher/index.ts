@@ -1,7 +1,7 @@
 import { Repository } from "@src/repository_watcher/git";
 import * as vscode from "vscode";
 
-interface RepositoryInternalApi extends Repository {
+interface RepositoryPrivateApi extends Repository {
     repository: {
         onDidRunOperation: (
             callback: (param: { operation: { kind: string } }) => void
@@ -11,13 +11,13 @@ interface RepositoryInternalApi extends Repository {
 }
 
 export class RepositoryWatcher implements vscode.Disposable {
-    repository: RepositoryInternalApi;
+    repository: RepositoryPrivateApi;
     getUnstageRows: (fsPath: string) => number[];
 
     disposables: vscode.Disposable[] = [];
 
     constructor(repository: Repository, getUnstageRows: (fsPath: string) => number[]) {
-        this.repository = repository as RepositoryInternalApi;
+        this.repository = repository as RepositoryPrivateApi;
         this.getUnstageRows = getUnstageRows;
 
         if (
@@ -26,7 +26,7 @@ export class RepositoryWatcher implements vscode.Disposable {
             || this.repository.repository.stage == null
         ) {
             throw new Error(
-                "Can not read extension vscode.git repository internal api !!!",
+                "Can not use extension vscode.git repository private api !!!",
             );
         }
 
