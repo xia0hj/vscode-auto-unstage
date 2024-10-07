@@ -15,19 +15,19 @@
     "commands": [
       {
         "command": "auto-unstage.addSelectedRows",
-        "title": "[Auto Unstage] Add selected rows which will auto unstaged"
+        "title": "[Auto Unstage] Add selected rows"
       },
       {
         "command": "auto-unstage.removeSelectedRows",
-        "title": "[Auto Unstage] Remove selected rows which will auto unstaged"
+        "title": "[Auto Unstage] Remove selected rows"
       },
       {
         "command": "auto-unstage.addRowFromGutter",
-        "title": "[Auto Unstage] Add current row which will auto unstaged"
+        "title": "[Auto Unstage] Add current row"
       },
       {
         "command": "auto-unstage.removeRowFromGutter",
-        "title": "[Auto Unstage] Remove current row which will auto unstaged"
+        "title": "[Auto Unstage] Remove current row"
       },
       {
         "command": "auto-unstage.navigateByItem",
@@ -66,11 +66,13 @@
       "editor/context": [
         {
           "command": "auto-unstage.addSelectedRows",
-          "when": "editorFocus"
+          "when": "editorFocus",
+          "group": "auto-unstage"
         },
         {
           "command": "auto-unstage.removeSelectedRows",
-          "when": "editorFocus"
+          "when": "editorFocus",
+          "group": "auto-unstage"
         }
       ],
       "editor/lineNumber/context": [
@@ -92,13 +94,16 @@
   "publisher": "xia0hj",
   "name": "auto-unstage",
   "displayName": "Auto Unstage",
+  "repository": {
+    "url": "https://github.com/xia0hj/vscode-auto-unstage"
+  },
   "version": "1.0.0",
   "devDependencies": {
     "@eslint/js": "^9.10.0",
     "@stylistic/eslint-plugin": "^2.7.2",
     "@types/eslint__js": "^8.42.3",
     "@types/vscode": "^1.93.0",
-    "@vscode/vsce": "^3.1.0",
+    "@vscode/vsce": "^3.1.1",
     "esbuild": "^0.23.1",
     "eslint": "^9.10.0",
     "typescript": "^5.5.4",
