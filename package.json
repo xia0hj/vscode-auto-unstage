@@ -19,6 +19,14 @@
       {
         "command": "auto-unstage.removeSelectedRows",
         "title": "Remove selected rows which will auto unstaged"
+      },
+      {
+        "command": "auto-unstage.navigateByItem",
+        "title": "goto"
+      },
+      {
+        "command": "auto-unstage.removeTreeItem",
+        "title": "remove"
       }
     ],
     "views": {
@@ -32,15 +40,20 @@
     "configuration": {
       "title": "Auto Unstage",
       "properties": {
-        "auto-unstage.enable": {
-          "type": "boolean",
-          "default": true
-        },
-        "auto-unstage.saveToWorkspace": {
-          "type": "boolean",
-          "default": false
+        "auto-unstage.opacity": {
+          "type": "number",
+          "default": 0.3,
+          "description": "opacity of unstage row."
         }
       }
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "auto-unstage.removeTreeItem",
+          "when": "viewItem == auto-unstage.removeTreeItem"
+        }
+      ]
     }
   },
   "extensionDependencies": [
@@ -51,7 +64,7 @@
   },
   "publisher": "xia0hj",
   "name": "auto-unstage",
-  "displayName": "My extension",
+  "displayName": "Auto Unstage",
   "version": "0.0.0",
   "devDependencies": {
     "@eslint/js": "^9.10.0",
