@@ -94,6 +94,7 @@
   "publisher": "xia0hj",
   "name": "auto-unstage",
   "displayName": "Auto Unstage",
+  "icon": "./assets/extension_icon.png",
   "repository": {
     "url": "https://github.com/xia0hj/vscode-auto-unstage"
   },
