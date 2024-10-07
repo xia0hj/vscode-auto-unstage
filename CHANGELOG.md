@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 1.0.3
+
+* update extension description.
+
 ## Version 1.0.2
 
 * update extension categories.
