@@ -101,6 +101,7 @@
   "categories": [
     "SCM Providers"
   ],
+  "description": "automatically removes specified lines from Git staging area.",
   "keywords": [
     "git",
     "stage",
