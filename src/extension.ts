@@ -46,6 +46,34 @@ export function activate(ctx: vscode.ExtensionContext) {
             rowMarkerManager.refresh();
         }),
 
+        // add row from gutter context menu btn
+        vscode.commands.registerCommand(
+            "auto-unstage.addRowFromGutter",
+            ({ lineNumber, uri }: { lineNumber: number, uri: vscode.Uri }) => {
+                // lineNumber is strat from 1
+                rowMarkerManager.addRows(
+                    uri.fsPath,
+                    lineNumber - 1,
+                    lineNumber - 1,
+                );
+                rowMarkerManager.refresh();
+            },
+        ),
+
+        // remove row from gutter context menu btn
+        vscode.commands.registerCommand(
+            "auto-unstage.removeRowFromGutter",
+            ({ lineNumber, uri }: { lineNumber: number, uri: vscode.Uri }) => {
+                // lineNumber is strat from 1
+                rowMarkerManager.removeRows(
+                    uri.fsPath,
+                    lineNumber - 1,
+                    lineNumber - 1,
+                );
+                rowMarkerManager.refresh();
+            },
+        ),
+
         // refresh icon when switch editor
         vscode.window.onDidChangeActiveTextEditor(() => {
             rowMarkerManager.refresh();
@@ -53,7 +81,7 @@ export function activate(ctx: vscode.ExtensionContext) {
 
         // navigate to tree item position
         vscode.commands.registerCommand("auto-unstage.navigateByItem", (item) => {
-            rowMarkerManager.openDocumentByItem(item)
+            rowMarkerManager.openDocumentByItem(item);
         }),
 
         // remove row item in tree view

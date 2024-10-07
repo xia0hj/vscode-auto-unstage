@@ -4,7 +4,8 @@
     "eslint": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "package": "npm run build && vsce package --no-dependencies"
+    "package": "npm run build && vsce package --no-dependencies",
+    "nolyfill": "npx nolyfill install && pnpm install"
   },
   "main": "./dist/extension.cjs",
   "activationEvents": [
@@ -14,11 +15,19 @@
     "commands": [
       {
         "command": "auto-unstage.addSelectedRows",
-        "title": "Add selected rows which will auto unstaged"
+        "title": "[Auto Unstage] Add selected rows which will auto unstaged"
       },
       {
         "command": "auto-unstage.removeSelectedRows",
-        "title": "Remove selected rows which will auto unstaged"
+        "title": "[Auto Unstage] Remove selected rows which will auto unstaged"
+      },
+      {
+        "command": "auto-unstage.addRowFromGutter",
+        "title": "[Auto Unstage] Add current row which will auto unstaged"
+      },
+      {
+        "command": "auto-unstage.removeRowFromGutter",
+        "title": "[Auto Unstage] Remove current row which will auto unstaged"
       },
       {
         "command": "auto-unstage.navigateByItem",
@@ -53,6 +62,24 @@
           "command": "auto-unstage.removeTreeItem",
           "when": "viewItem == auto-unstage.removeTreeItem"
         }
+      ],
+      "editor/context": [
+        {
+          "command": "auto-unstage.addSelectedRows",
+          "when": "editorFocus"
+        },
+        {
+          "command": "auto-unstage.removeSelectedRows",
+          "when": "editorFocus"
+        }
+      ],
+      "editor/lineNumber/context": [
+        {
+          "command": "auto-unstage.addRowFromGutter"
+        },
+        {
+          "command": "auto-unstage.removeRowFromGutter"
+        }
       ]
     }
   },
@@ -65,7 +92,7 @@
   "publisher": "xia0hj",
   "name": "auto-unstage",
   "displayName": "Auto Unstage",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "devDependencies": {
     "@eslint/js": "^9.10.0",
     "@stylistic/eslint-plugin": "^2.7.2",
@@ -79,5 +106,10 @@
     "vitest": "^2.0.5"
   },
   "private": true,
-  "license": "MIT"
+  "license": "MIT",
+  "pnpm": {
+    "overrides": {
+      "side-channel": "npm:@nolyfill/side-channel@^1"
+    }
+  }
 }
