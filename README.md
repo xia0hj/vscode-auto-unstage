@@ -5,29 +5,29 @@
 There are some debug codes I don't want to commit.  
 So I develop a simple extension to automatically remove them from git staging area.
 
-![](./doc/motivation.jpg)
+![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/motivation.jpg?raw=true)
 
 ## Usage
 
 ### 1. Select rows and mark them
 
 editor context menu:  
-![](./doc/editor_context.jpg)
+![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/editor_context.jpg?raw=true)
 
 or gutter context menu:  
-![](./doc/gutter_context.jpg)
+![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/gutter_context.jpg?raw=true)
 
 or commands:  
-![](./doc/commands.jpg)
+![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/commands.jpg?raw=true)
 
 ### 2. Click staging buttons
 
 Notes: run command `git add .` will not trigger, only support staging buttons.
 
-![](./doc/stage_all.jpg)
-![](./doc/stage_changes.jpg)
+![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/stage_all.jpg?raw=true)
+![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/stage_changes.jpg?raw=true)
 
 ### 3. Manage marked rows in tree view
 
-![](./doc/tree_view.jpg)
+![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/tree_view.jpg?raw=true)
 
