@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 1.0.2
+
+* update extension categories.
+
 ## Version 1.0.1
 
 * do not show activation message.
