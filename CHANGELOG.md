@@ -2,4 +2,4 @@
 
 ## Version 1.0.0
 
-* release
+* release with basic features
