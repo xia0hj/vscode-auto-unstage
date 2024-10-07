@@ -3,7 +3,7 @@
 ## Motivation
 
 There are some debug codes I don't want to commit.  
-So I develop a simple extension to automatically remove them from git staging area.
+So I develop a simple vscode extension to automatically remove them from git staging area.
 
 ![](https://github.com/xia0hj/vscode-auto-unstage/blob/main/doc/motivation.jpg?raw=true)
 
