@@ -98,7 +98,7 @@
   "repository": {
     "url": "https://github.com/xia0hj/vscode-auto-unstage"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "devDependencies": {
     "@eslint/js": "^9.10.0",
     "@stylistic/eslint-plugin": "^2.7.2",
