@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { expect, test } from "vitest";
 import { RowMarkerManager } from "@src/row_marker_manager";
-import { GitExtension } from "@src/repository_watcher/git";
+import { GitExtension, Repository } from "@src/repository_watcher/git";
 import { RepositoryWatcher } from "@src/repository_watcher";
 import path from "node:path";
 
@@ -103,20 +103,26 @@ export function activate(ctx: vscode.ExtensionContext) {
 
     // #region init RepositoryWatcher
     const watcherMap = new Map<string, RepositoryWatcher>();
-    ctx.subscriptions.push(
-        gitExtensionApi.onDidOpenRepository(
-            (repository) => {
-                const repositoryWatcher = new RepositoryWatcher(
-                    repository,
-                    fsPath => rowMarkerManager.getUnstageRows(fsPath),
-                );
-                ctx.subscriptions.push(repositoryWatcher);
-                watcherMap.set(repository.rootUri.toString(), repositoryWatcher);
 
-                const repoName = path.basename(repository.rootUri.path);
-                vscode.window.showInformationMessage(`[Auto Unstage] watching repository ${repoName}`);
-            },
-        ),
+    const watchRepository = (repository: Repository) => {
+        if (watcherMap.has(repository.rootUri.toString())) {
+            return;
+        }
+        console.log("[Auto Unstage] watching repository", repository.rootUri.path);
+        const repositoryWatcher = new RepositoryWatcher(
+            repository,
+            fsPath => rowMarkerManager.getUnstageRows(fsPath),
+        );
+        ctx.subscriptions.push(repositoryWatcher);
+        watcherMap.set(repository.rootUri.toString(), repositoryWatcher);
+
+        const repoName = path.basename(repository.rootUri.path);
+        vscode.window.showInformationMessage(`[Auto Unstage] watching repository ${repoName}`);
+    };
+
+    gitExtensionApi.repositories.map(watchRepository);
+    ctx.subscriptions.push(
+        gitExtensionApi.onDidOpenRepository(watchRepository),
         gitExtensionApi.onDidCloseRepository((repository) => {
             watcherMap.get(repository.rootUri.toString())?.dispose();
         }),

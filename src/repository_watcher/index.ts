@@ -14,7 +14,7 @@ export class RepositoryWatcher implements vscode.Disposable {
     repository: RepositoryInternalApi;
     getUnstageRows: (fsPath: string) => number[];
 
-    disposable?: vscode.Disposable;
+    disposables: vscode.Disposable[] = [];
 
     constructor(repository: Repository, getUnstageRows: (fsPath: string) => number[]) {
         this.repository = repository as RepositoryInternalApi;
@@ -30,34 +30,37 @@ export class RepositoryWatcher implements vscode.Disposable {
             );
         }
 
-        this._watchOperationAdd();
+        this.watchOperationAdd();
     }
 
-    private _watchOperationAdd() {
-        this.disposable = this.repository.repository.onDidRunOperation(async ({ operation }) => {
-            if (operation.kind !== "Add") {
-                return;
-            }
-
-            for (const { uri } of this.repository.state.indexChanges) {
-                const unstageRows = new Set(this.getUnstageRows(uri.fsPath));
-                const textDocument = await vscode.workspace.openTextDocument(uri);
-                const rowText: string[] = [];
-                for (let row = 0; row < textDocument.lineCount; row++) {
-                    if (unstageRows.has(row)) {
-                        continue;
-                    }
-                    const curRowText = textDocument.getText(
-                        new vscode.Range(row, 0, row + 1, 0),
-                    );
-                    rowText.push(curRowText);
+    private watchOperationAdd() {
+        this.disposables.push(
+            // trigger when clicking staging btn, but not trigger when running command 'git add .'
+            this.repository.repository.onDidRunOperation(async ({ operation }) => {
+                if (operation.kind !== "Add") {
+                    return;
                 }
-                this.repository.repository.stage(uri, rowText.join(""));
-            }
-        });
+
+                for (const { uri } of this.repository.state.indexChanges) {
+                    const unstageRows = new Set(this.getUnstageRows(uri.fsPath));
+                    const textDocument = await vscode.workspace.openTextDocument(uri);
+                    const rowText: string[] = [];
+                    for (let row = 0; row < textDocument.lineCount; row++) {
+                        if (unstageRows.has(row)) {
+                            continue;
+                        }
+                        const curRowText = textDocument.getText(
+                            new vscode.Range(row, 0, row + 1, 0),
+                        );
+                        rowText.push(curRowText);
+                    }
+                    this.repository.repository.stage(uri, rowText.join(""));
+                }
+            }),
+        );
     }
 
     dispose() {
-        this.disposable?.dispose();
+        this.disposables.forEach(d => d.dispose());
     }
 }
